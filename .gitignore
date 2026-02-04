@@ -1,9 +1,9 @@
 # Archivos generados por Emscripten (compilación a WebAssembly)
-*.html
+#*.html
 #*.js
 #*.wasm
-*.data
-*.mem          # solo si usas asm.js viejo
+#*.data
+*.mem          # solo si se usa asm.js viejo
 *.cache*       # cache de emcc
 *.tmp*
 *.out
