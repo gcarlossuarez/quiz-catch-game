@@ -1,0 +1,40 @@
+# Archivos generados por Emscripten (compilación a WebAssembly)
+*.html
+*.js
+*.wasm
+*.data
+*.mem          # solo si usas asm.js viejo
+*.cache*       # cache de emcc
+*.tmp*
+*.out
+
+# Archivos de build y temporales de C++
+*.o
+*.obj
+*.exe          # si compilas versión nativa
+*.a
+*.lib
+build/
+out/
+dist/
+bin/
+obj/
+
+# Emscripten cache y SDK (si lo tienes dentro del proyecto, cosa rara)
+cache/
+upstream/
+.emsdk_portable/
+emsdk_env.*
+
+# Archivos del sistema operativo / editores
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.vscode/
+.idea/
+*.code-workspace
+
+
+# Logs y temporales
+*.log
