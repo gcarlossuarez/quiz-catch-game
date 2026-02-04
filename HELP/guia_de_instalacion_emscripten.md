@@ -89,4 +89,5 @@ C++#ifdef __EMSCRIPTEN__
 
 ## Más información
 
-Consulta la sección de teoría en el archivo [teoria_webassembly.md](teoria_webassembly.md).
+- Para compilar en emscripten, consultar [Ayuda-Memoria-Compilación-En-Emscripten.md](Ayuda-Memoria-Compilación-En-Emscripten.md).
+- PAra tepria de WebAssembly, consultar la sección de teoría en el archivo [teoria_webassembly.md](teoria_webassembly.md).
