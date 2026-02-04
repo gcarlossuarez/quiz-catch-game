@@ -1,0 +1,57 @@
+// Cuestionario sobre Linux Embebido
+
+::C1_3.1 Definición de Linux Embebido:: ¿Qué es esencialmente el Linux embebido (embedded Linux)? {
+    ~Es un sistema operativo completamente diferente al núcleo de Linux estándar.
+    ~Es una versión de Windows optimizada para microcontroladores.
+    ~Es un software propietario que no permite ver su código fuente.
+	=Es un tipo de sistema operativo o núcleo Linux diseñado para ser instalado en dispositivos o sistemas empotrados.
+}
+
+::C1_3.2 Diferencias con Linux Estándar:: ¿Cuál es una de las principales diferencias entre el Linux embebido y la versión de escritorio estándar? {
+    ~El Linux embebido requiere mucha más potencia de procesamiento que la versión PC.
+    ~No utiliza el núcleo de Linux, sino uno creado por Microsoft.
+	=El Linux embebido tiene un tamaño mucho menor, requiere menos potencia y posee características mínimas.
+    ~Solo puede ejecutarse en supercomputadoras.
+}
+
+::C1_3.3 Proyecto Yocto:: ¿Cuál es la función principal del Proyecto Yocto mencionado en las fuentes? {
+    =Facilitar a los desarrolladores la creación de sus propios sistemas Linux personalizados, sin importar la arquitectura del hardware.
+    ~Vender licencias de software para cámaras digitales.
+    ~Crear juegos de alta fidelidad para sistemas Linux.
+    ~Sustituir por completo al núcleo de Linux en los servidores web.
+}
+
+::C1_3.3 Android y Linux Embebido:: Según las fuentes, ¿cuál es la relación entre Android y el Linux embebido? {
+    ~Android es un sistema operativo que no tiene ninguna relación con el núcleo de Linux.
+	=Android es un tipo de Linux embebido personalizado para smartphones que comparte el mismo núcleo y controladores.
+    ~Android es el único tipo de Linux embebido que existe actualmente.
+    ~Android no utiliza gestión de memoria ni capacidades de red de Linux.
+}
+
+::C1_3.4 Ventajas del Sistema:: ¿Cuál de las siguientes es una ventaja destacada del uso de Linux embebido? {
+    ~Que es un sistema de código cerrado que evita que el público vea el software.
+    ~Que requiere hardware extremadamente costoso para funcionar.
+    ~Que no permite la redistribución del código fuente.
+	=Su flexibilidad, bajo coste y el hecho de ser código abierto con un núcleo estable.
+}
+
+::C1_3.5 Puntos Débiles:: ¿Cuál se considera un punto débil o desventaja del Linux embebido? {
+    =Requiere un espacio de memoria comparativamente grande frente a otros entornos de recursos limitados.
+    ~Es demasiado simple y carece de características para la comunidad.
+    ~No permite el uso de lenguajes como C o C++.
+    ~Es imposible de personalizar para maquinaria industrial.
+}
+
+::C1_3.6 Desarrollo en Windows:: ¿Qué permite hacer el Subsistema de Windows para Linux (WSL) a los desarrolladores? {
+    ~Borrar por completo el sistema Windows para instalar Ubuntu.
+	=Ejecutar herramientas de desarrollo de Linux de forma nativa dentro del entorno de Windows.
+    ~Simular únicamente el hardware de una cámara fotográfica.
+    ~Evitar el uso de cualquier interfaz de kernel compatible con Linux [13].
+}
+
+::C1_3.7 Aplicaciones Reales:: ¿En qué ámbitos se utiliza comúnmente el Linux embebido según las fuentes? {
+    =En electrónica de consumo, automoción, automatización industrial e instrumentos médicos.
+    ~Únicamente en computadoras de escritorio de propósito general.
+    ~Exclusivamente en el desarrollo de microondas domésticos.
+    ~Solo en sistemas que no requieren conexión a red.
+}
