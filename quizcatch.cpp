@@ -1,3 +1,74 @@
+/*
+========================================
+ DIAGRAMA DE LA LÓGICA DEL ALGORITMO
+========================================
+
+1. Carga preguntas desde archivo (GIFT)
+2. Inicializa el estado y la UI
+3. Muestra pantalla de selección de modo:
+    ┌───────────────────────────────┐
+    │  [1] Estudio   [2] Juego      │
+    └───────────────────────────────┘
+    |                              |
+    |-> Estudio: orden original, muestra respuesta correcta en verde
+    |-> Juego: mezcla preguntas, NO muestra respuesta correcta
+4. Para cada pregunta:
+    a) Muestra pregunta y opciones
+    b) Al continuar, caen letras (opciones)
+    c) El jugador mueve la paleta y atrapa una letra
+    d) Si es correcta, suma acierto
+    e) Avanza a la siguiente pregunta
+5. Al finalizar:
+    - Si aciertos >= mínimo, gana
+    - Si no, fin del juego
+
+// Lógica principal:
+
+main()
+  └─> cargar preguntas
+  └─> initGameUI()
+  └─> state = MODE_SELECT
+  └─> loop principal:
+            └─> handleEvents()
+            └─> updateGame()
+            └─> renderGame()
+
+// Selección de modo:
+handleEvents()
+  └─> Si elige JUEGO: mezcla preguntas
+  └─> Si elige ESTUDIO: NO mezcla
+
+// Caída de letras:
+renderFalling()
+  └─> Si modo ESTUDIO y es correcta: verde
+  └─> Si modo JUEGO: todas igual
+*/
+/*
+========================================
+ OPCIONES DE COMPILACIÓN RECOMENDADAS
+========================================
+
+Para compilar este juego con Emscripten y SDL2, usa:
+
+em++ quizcatch.cpp -o quiz.html -std=c++11 -O2 \
+  -s USE_SDL=2 -s USE_SDL_TTF=2 -s USE_FREETYPE=1 \
+  --preload-file arial.ttf --preload-file quiz.gift
+
+Explicación de cada opción:
+- em++                → Compilador C++ de Emscripten
+- quizcatch.cpp       → Archivo fuente principal
+- -o quiz.html        → Salida: HTML+JS+WASM
+- -std=c++11          → Usa estándar C++11
+- -O2                 → Optimización nivel 2
+- -s USE_SDL=2        → Habilita SDL2 (gráficos, input)
+- -s USE_SDL_TTF=2    → Habilita SDL_ttf (texto TrueType)
+- -s USE_FREETYPE=1   → Habilita soporte de fuentes TTF
+- --preload-file ...  → Incluye archivos necesarios en el paquete (fuente y preguntas)
+
+NOTA: Si se compila para escritorio (no web), se debe enlazar SDL2 y SDL2_ttf según el sistema donde se ejecute.
+
+*/
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <algorithm>
@@ -39,6 +110,22 @@ static SDL_Window* window = nullptr;
 static SDL_Renderer* renderer = nullptr;
 static TTF_Font* font = nullptr;
 
+// ----------------------------------------
+// Modo de funcionamiento: JUEGO o ESTUDIO
+// ----------------------------------------
+enum class PlayMode {
+    GAME,
+    STUDY
+};
+
+static PlayMode playMode = PlayMode::STUDY; // Por defecto modo estudio
+// ---------------------------------------
+
+
+// Opciones de la pregunta actual (mezcladas si corresponde)
+
+
+// Elimina espacios en blanco al inicio y final de una cadena.
 static string trim(const string& s) {
     size_t a = 0;
     while (a < s.size() && isspace(static_cast<unsigned char>(s[a]))) a++;
@@ -134,6 +221,7 @@ static vector<string> splitLinesWrapPixels(const string& text, int maxWidthPx) {
     return out;
 }
 
+// Dibuja un texto en pantalla en la posición (x, y) con el color dado.
 static void drawText(const string& text, int x, int y, SDL_Color color) {
     if (!font) return;
     SDL_Surface* surface = TTF_RenderUTF8_Solid(font, text.c_str(), color);
@@ -145,6 +233,7 @@ static void drawText(const string& text, int x, int y, SDL_Color color) {
     SDL_FreeSurface(surface);
 }
 
+// Dibuja un botón con etiqueta, fondo y color de texto especificados.
 static void drawButton(const string& label, SDL_Rect rect, SDL_Color bgColor, SDL_Color textColor) {
     SDL_SetRenderDrawColor(renderer, bgColor.r, bgColor.g, bgColor.b, bgColor.a);
     SDL_RenderFillRect(renderer, &rect);
@@ -166,6 +255,7 @@ struct Question {
     vector<Choice> choices;
 };
 
+// Lee todo el contenido de un archivo de texto y lo retorna como string.
 static string readAllFile(const string& path) {
     ifstream in(path);
     if (!in) return {};
@@ -174,6 +264,7 @@ static string readAllFile(const string& path) {
     return ss.str();
 }
 
+// Parsea preguntas en formato GIFT simple y devuelve un vector de Question.
 static vector<Question> parseGiftSimple(const string& content) {
     vector<Question> qs;
 
@@ -251,6 +342,7 @@ static vector<Question> parseGiftSimple(const string& content) {
 }
 
 enum class GameState {
+    MODE_SELECT,   // Nueva pantalla de selección de modo
     SHOW_QUESTION,
     FALLING,
     GAME_OVER,
@@ -265,7 +357,10 @@ struct FallingLetter {
 
 static SDL_Rect paddle{};
 static float fallSpeed = INITIAL_SPEED;
-static GameState state = GameState::SHOW_QUESTION;
+static GameState state = GameState::MODE_SELECT;
+// Botones para elegir modo
+static SDL_Rect btnModoJuego{};
+static SDL_Rect btnModoEstudio{};
 
 static vector<Question> questions;
 static int currentQ = 0;
@@ -278,6 +373,7 @@ static SDL_Rect btnContinue{};
 
 static bool gameRunning = true;
 
+// Inicializa SDL2, la ventana, el renderer y la fuente. Devuelve true si tuvo éxito.
 static bool initSDL() {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         cout << "Error SDL: " << SDL_GetError() << endl;
@@ -313,6 +409,7 @@ static bool initSDL() {
     return true;
 }
 
+// Libera recursos de SDL2 y cierra la aplicación.
 static void cleanup() {
     if (font) TTF_CloseFont(font);
     if (renderer) SDL_DestroyRenderer(renderer);
@@ -321,27 +418,35 @@ static void cleanup() {
     SDL_Quit();
 }
 
+// Inicializa la posición de la paleta y los botones de la UI.
 static void initGameUI() {
     paddle = {W / 2 - PADDLE_WIDTH / 2, H - 40, PADDLE_WIDTH, PADDLE_HEIGHT};
 
     int margin = 18;
     btnLeft = {margin, H - BUTTON_HEIGHT - margin, BUTTON_WIDTH, BUTTON_HEIGHT};
     btnRight = {W - BUTTON_WIDTH - margin, H - BUTTON_HEIGHT - margin, BUTTON_WIDTH, BUTTON_HEIGHT};
-
     btnContinue = {W / 2 - 90, H - BUTTON_HEIGHT - margin, 180, BUTTON_HEIGHT};
+
+    // Botones de selección de modo
+    btnModoJuego = {W/2 - 200, H/2 - 40, 180, 60};
+    btnModoEstudio = {W/2 + 20, H/2 - 40, 180, 60};
 }
 
+// Calcula la cantidad de aciertos necesarios para ganar.
 static int neededToWin() {
     int total = (int)questions.size();
     return (total / 2) + 1;
 }
 
+// Genera las letras (opciones) que caen para la pregunta actual.
+// Si el modo es JUEGO, mezcla aleatoriamente las opciones y reasigna las letras.
 static void spawnLettersForCurrentQuestion() {
     falling.clear();
     if (currentQ < 0 || currentQ >= (int)questions.size()) return;
 
-    const auto& q = questions[currentQ];
-    int n = (int)q.choices.size();
+    // Usar las opciones en el orden original
+    const auto& choices = questions[currentQ].choices;
+    int n = (int)choices.size();
     if (n <= 0) return;
 
     int topY = 150;
@@ -354,8 +459,8 @@ static void spawnLettersForCurrentQuestion() {
         int x = leftPad + (int)(t * usable) - LETTER_SIZE / 2;
 
         FallingLetter fl;
-        fl.label = q.choices[i].label;
-        fl.correct = q.choices[i].correct;
+        fl.label = choices[i].label;
+        fl.correct = choices[i].correct;
         fl.rect = {x, topY, LETTER_SIZE, LETTER_SIZE};
         falling.push_back(fl);
     }
@@ -363,6 +468,7 @@ static void spawnLettersForCurrentQuestion() {
     fallSpeed = (float)INITIAL_SPEED;
 }
 
+// Procesa la respuesta atrapada: suma acierto si es correcta y avanza de pregunta.
 static void handleAnswerCaught(const FallingLetter& caught) {
     if (caught.correct) correctCount++;
 
@@ -377,14 +483,17 @@ static void handleAnswerCaught(const FallingLetter& caught) {
     falling.clear();
 }
 
+// Devuelve true si el punto (x, y) está dentro del rectángulo r.
 static bool pointInRect(int x, int y, const SDL_Rect& r) {
     return x >= r.x && x <= (r.x + r.w) && y >= r.y && y <= (r.y + r.h);
 }
 
+// Devuelve true si los rectángulos a y b se superponen.
 static bool rectsOverlap(const SDL_Rect& a, const SDL_Rect& b) {
     return (a.x < b.x + b.w) && (a.x + a.w > b.x) && (a.y < b.y + b.h) && (a.y + a.h > b.y);
 }
 
+// Maneja los eventos de entrada del usuario (mouse, teclado) y la lógica de selección de modo.
 static void handleEvents() {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
@@ -398,7 +507,18 @@ static void handleEvents() {
                     int mx = event.button.x;
                     int my = event.button.y;
 
-                    if (state == GameState::SHOW_QUESTION) {
+                    if (state == GameState::MODE_SELECT) {
+                        if (pointInRect(mx, my, btnModoEstudio)) {
+                            playMode = PlayMode::STUDY;
+                            state = GameState::SHOW_QUESTION;
+                        } else if (pointInRect(mx, my, btnModoJuego)) {
+                            playMode = PlayMode::GAME;
+                            // Mensaje por consola antes de mezclar
+                            cout << "[MODO JUEGO] Mezclando preguntas aleatoriamente..." << endl;
+                            std::random_shuffle(questions.begin(), questions.end());
+                            state = GameState::SHOW_QUESTION;
+                        }
+                    } else if (state == GameState::SHOW_QUESTION) {
                         if (pointInRect(mx, my, btnContinue)) {
                             state = GameState::FALLING;
                             spawnLettersForCurrentQuestion();
@@ -418,6 +538,20 @@ static void handleEvents() {
             case SDL_KEYDOWN:
                 if (event.key.keysym.sym == SDLK_ESCAPE) {
                     gameRunning = false;
+                    break;
+                }
+
+                if (state == GameState::MODE_SELECT) {
+                    if (event.key.keysym.sym == SDLK_1) {
+                        playMode = PlayMode::STUDY;
+                        state = GameState::SHOW_QUESTION;
+                    } else if (event.key.keysym.sym == SDLK_2) {
+                        playMode = PlayMode::GAME;
+                        // Mensaje por consola antes de mezclar
+                        cout << "[MODO JUEGO] Mezclando preguntas aleatoriamente..." << endl;
+                        std::random_shuffle(questions.begin(), questions.end());
+                        state = GameState::SHOW_QUESTION;
+                    }
                     break;
                 }
 
@@ -457,6 +591,20 @@ static void handleEvents() {
     }
 }
 
+// Renderiza la pantalla de selección de modo
+// Dibuja la pantalla de selección de modo (juego o estudio).
+static void renderModeSelect() {
+    SDL_SetRenderDrawColor(renderer, BLK.r, BLK.g, BLK.b, BLK.a);
+    SDL_RenderClear(renderer);
+    drawText("Selecciona el modo de juego:", W/2 - 180, H/2 - 120, YLW);
+    drawButton("MODO JUEGO", btnModoJuego, BLU, BLK);
+    drawButton("MODO ESTUDIO", btnModoEstudio, GRN, BLK);
+    drawText("(1) Juego   (2) Estudio", W/2 - 120, H/2 + 40, WHT);
+    SDL_RenderPresent(renderer);
+}
+
+
+// Actualiza la lógica del juego en cada frame (movimiento de letras, colisiones, etc).
 static void updateGame() {
     if (state != GameState::FALLING) return;
 
@@ -486,6 +634,7 @@ static void updateGame() {
     fallSpeed += SPEED_ACCEL; // <- antes 0.01f (más lenta la aceleración)
 }
 
+// Dibuja la superposición con la pregunta y las opciones antes de que caigan las letras.
 static void renderQuestionOverlay() {
     if (currentQ < 0 || currentQ >= (int)questions.size()) return;
     const auto& q = questions[currentQ];
@@ -515,7 +664,7 @@ static void renderQuestionOverlay() {
     y += 10;
 
     // Opciones con wrap por píxeles (y con indent en líneas siguientes)
-    for (const auto& c : q.choices) {
+    for (const auto& c : questions[currentQ].choices) {
         const int indentFirst = 0;
         const int indentNext = 24;
         const string prefix = string(1, c.label) + ") ";
@@ -531,6 +680,7 @@ static void renderQuestionOverlay() {
     drawButton("Continue (SPACE)", btnContinue, GRN, BLK);
 }
 
+// Dibuja las letras cayendo y la paleta. Colorea en verde la correcta solo en modo estudio.
 static void renderFalling() {
     drawButton("<--", btnLeft, GRN, BLK);
     drawButton("-->", btnRight, GRN, BLK);
@@ -547,7 +697,7 @@ static void renderFalling() {
     SDL_RenderFillRect(renderer, &paddle);
 
     for (const auto& fl : falling) {
-        SDL_Color box = fl.correct ? SDL_Color{0, 160, 80, 255} : SDL_Color{60, 120, 220, 255};
+        SDL_Color box = fl.correct && playMode == PlayMode::STUDY ? SDL_Color{0, 160, 80, 255} : SDL_Color{60, 120, 220, 255};
         SDL_SetRenderDrawColor(renderer, box.r, box.g, box.b, box.a);
         SDL_RenderFillRect(renderer, &fl.rect);
 
@@ -559,6 +709,7 @@ static void renderFalling() {
     }
 }
 
+// Dibuja la pantalla final de victoria o derrota.
 static void renderEndScreen(bool win) {
     string title = win ? "GANASTE!" : "FIN DEL JUEGO";
     SDL_Color col = win ? GRN : RED;
@@ -570,30 +721,34 @@ static void renderEndScreen(bool win) {
        << " | Necesarios: " << neededToWin();
     drawText(ss.str(), W / 2 - 170, H / 2 - 40, WHT);
 
-    drawText("Presiona cualquier tecla o clic para salir.", W / 2 - 210, H / 2 + 10, WHT);
+    drawText("Recarga el juego para reiniciar.", W / 2 - 210, H / 2 + 10, WHT);
 }
 
+// Dibuja la pantalla principal según el estado actual del juego.
 static void renderGame() {
     SDL_SetRenderDrawColor(renderer, BLK.r, BLK.g, BLK.b, BLK.a);
     SDL_RenderClear(renderer);
 
+    if (state == GameState::MODE_SELECT) {
+        renderModeSelect();
+        return;
+    }
     if (questions.empty()) {
         drawText("No se cargaron preguntas. Asegura un archivo quiz.gift valido.", 18, 18, RED);
         drawText("Uso: QuizCatch.exe quiz.gift", 18, 50, WHT);
         SDL_RenderPresent(renderer);
         return;
     }
-
     if (state == GameState::SHOW_QUESTION) renderQuestionOverlay();
     else if (state == GameState::FALLING) renderFalling();
     else if (state == GameState::GAME_OVER) renderEndScreen(false);
     else if (state == GameState::GAME_WIN) renderEndScreen(true);
-
     SDL_RenderPresent(renderer);
 }
 
 
 // Add this new function for the loop
+// Loop principal: procesa eventos, actualiza lógica y renderiza.
 static void main_loop() {
     Uint32 frameStart = SDL_GetTicks();
     handleEvents();
@@ -603,6 +758,7 @@ static void main_loop() {
     // No SDL_Delay needed in web; Emscripten handles framing
 }
 
+// Función principal: inicializa, carga preguntas, entra al loop principal y limpia al salir.
 int main(int argc, char* argv[]) {
     SDL_SetMainReady();
     if (!initSDL()) return 1;
@@ -615,7 +771,7 @@ int main(int argc, char* argv[]) {
     questions = parseGiftSimple(readAllFile(giftPath));
 
     initGameUI();
-    state = GameState::SHOW_QUESTION;
+    state = GameState::MODE_SELECT; // Mostrar pantalla de selección de modo al inicio
     currentQ = 0;
     correctCount = 0;
 
@@ -643,7 +799,7 @@ int main(int argc, char* argv[]) {
     questions = parseGiftSimple(readAllFile(giftPath));
 
     initGameUI();
-    state = GameState::SHOW_QUESTION;
+    state = GameState::MODE_SELECT;
     currentQ = 0;
     correctCount = 0;
 
@@ -662,3 +818,4 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 */
+

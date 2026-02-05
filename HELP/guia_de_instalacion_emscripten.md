@@ -1,6 +1,7 @@
 ## Markdown# Guía: Instalación de Emscripten, Compilación y Ejecución de Quiz Catch en WebAssembly
 
 ## 1. Requisitos Previos
+
 - Sistema Operativo: Windows, macOS o Linux
 - Git instalado: https://git-scm.com/downloads
 - Python 3 instalado (con "Add to PATH" en Windows): https://www.python.org/downloads
@@ -10,42 +11,65 @@
   - `quiz.gift` → Tu archivo de preguntas en formato GIFT
 
 ## 2. Instalación de Emscripten (Windows - PowerShell/cmd)
+
 1. Crear carpeta (ejemplo):
-mkdir D:\Tools\emsdk
-cd D:\Tools\emsdk
-text2. Clona el repositorio:
-git clone https://github.com/emscripten-core/emsdk.git .
-text3. Instala la versión latest:
-.\emsdk install latest
-text4. Activa:
-.\emsdk activate latest
-.\emsdk_env.bat
-text(Repite `.\emsdk_env.bat` cada vez que abras una terminal nueva)
+   mkdir D:\Tools\emsdk
+   cd D:\Tools\emsdk
+   text2. Clona el repositorio:
+   git clone https://github.com/emscripten-core/emsdk.git .
+   text3. Instala la versión latest:
+   .\emsdk install latest
+   text4. Activa:
+   .\emsdk activate latest
+   .\emsdk_env.bat
+   text(Repite `.\emsdk_env.bat` cada vez que abras una terminal nueva)
 
 ## 3. Arreglos importantes para arial.ttf
+
 - **Problema común**: `file_packager: error: $arial.ttf does not exist`
 - **Solución**:
 - Copia `arial.ttf` y `quiz.gift` **exactamente** a la carpeta donde está `quizcatch.cpp`
 - Nombre debe ser **minúsculas**: `arial.ttf` (no `Arial.ttf`)
 - Verificar con:
+
 ```text
 dir arial.ttf
 dir quiz.gift
 ```
+
 ## 4. Compilación
+
 En la carpeta del proyecto:
-em++ quizcatch.cpp -o quiz.html -std=c++11 -O2 
--s USE_SDL=2 -s USE_SDL_TTF=2 -s USE_FREETYPE=1 
---preload-file arial.ttf --preload-file quiz.gift
-textOpcional (si hay problemas de memoria):
-... -s ALLOW_MEMORY_GROWTH=1
-textArchivos generados: `quiz.html`, `quiz.js`, `quiz.wasm`, `quiz.data`
+```bash
+em++ quizcatch.cpp -o quiz.html -std=c++11 -O2 -s USE_SDL=2 -s USE_SDL_TTF=2 -s USE_FREETYPE=1 --preload-file arial.ttf --preload-file quiz.gift
+```
+
+Explicación de cada opción de compilación:
+- em++                → Compilador C++ de Emscripten
+- quizcatch.cpp       → Archivo fuente principal
+- -o quiz.html        → Salida: HTML+JS+WASM
+- -std=c++11          → Usa estándar C++11
+- -O2                 → Optimización nivel 2
+- -s USE_SDL=2        → Habilita SDL2 (gráficos, input)
+- -s USE_SDL_TTF=2    → Habilita SDL_ttf (texto TrueType)
+- -s USE_FREETYPE=1   → Habilita soporte de fuentes TTF
+- --preload-file ...  → Incluye archivos necesarios en el paquete (fuente y preguntas)
+
+
+```text
+`Opcional (si hay problemas de memoria): ... -s ALLOW_MEMORY_GROWTH=1 `
+```
+
+```text
+Archivos `generados`: `quiz.html `, `quiz.js `, `quiz.wasm `, `quiz.data`
+```
 
 ## 5. Ejecución
+
 1. Iniciar servidor local:
-python -m http.server
-text2. Abre en navegador:
-http://localhost:8000/quiz.html
+   python -m http.server
+2. Abrir en navegador:
+   http://localhost:8000/quiz.html
 
 ¡Listo! El juego debe funcionar con teclado/mouse.
 
@@ -54,6 +78,7 @@ http://localhost:8000/quiz.html
 ## Cambios en el código (quizcatch.cpp)
 
 1. Agregar inclusión condicional:
+
 ```cpp
 #ifdef __EMSCRIPTEN__
 #include <emscripten/emscripten.h>
@@ -83,7 +108,6 @@ C++#ifdef __EMSCRIPTEN__
     }
 #endif
 ```
-
 
 ---
 

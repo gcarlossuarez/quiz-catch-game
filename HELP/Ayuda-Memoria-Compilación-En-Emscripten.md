@@ -60,11 +60,23 @@ cd D:\UCB\Programación_Superior\Cpp\Games\quiz-catch-game
 
 O cualquier otro repo donde se esté trabajando.
 
-3. Compila5 directamente:
+3. Compila directamente:
 
 ```
-em++ mi-proyecto.cpp -o index.html -std=c++11 -O2 -s USE_SDL=2 ...
+em++ quizcatch.cpp -o quiz.html -std=c++11 -O2 -s USE_SDL=2 -s USE_SDL_TTF=2 -s USE_FREETYPE=1 --preload-file arial.ttf --preload-file quiz.gift
 ```
+
+Explicación de cada opción de compilación:
+
+- em++                → Compilador C++ de Emscripten
+- quizcatch.cpp       → Archivo fuente principal
+- -o quiz.html        → Salida: HTML+JS+WASM
+- -std=c++11          → Usa estándar C++11
+- -O2                 → Optimización nivel 2
+- -s USE_SDL=2        → Habilita SDL2 (gráficos, input)
+- -s USE_SDL_TTF=2    → Habilita SDL_ttf (texto TrueType)
+- -s USE_FREETYPE=1   → Habilita soporte de fuentes TTF
+- --preload-file ...  → Incluye archivos necesarios en el paquete (fuente y preguntas)
 
 4. Cuando se termine, simplemente cerra5 la ventana (no se necesita desactivar nada).
 
