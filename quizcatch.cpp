@@ -497,6 +497,12 @@ static bool rectsOverlap(const SDL_Rect& a, const SDL_Rect& b) {
 static void handleEvents() {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
+        // SDL_PollEvent devuelve 1 (true) si había un evento disponible
+        // y lo copia en 'event'. Si ya no quedan eventos, devuelve 0 (false)
+        // y el while termina.
+
+        // El programa procesa un evento por vuelta del while.
+        // Ej: SDL_QUIT, SDL_MOUSEBUTTONDOWN, SDL_KEYDOWN, ...
         switch (event.type) {
             case SDL_QUIT:
                 gameRunning = false;
@@ -775,6 +781,16 @@ int main(int argc, char* argv[]) {
     currentQ = 0;
     correctCount = 0;
 
+    /*
+    +---------------------------+
+    | while (gameRunning)       |
+    |   1) eventos (input)      |
+    |   2) update (lógica)      |
+    |   3) render (dibujo)      |
+    +-------------^-------------+
+              |
+              +--- se repite hasta salir
+     */
 #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop(main_loop, 0, 1);  // 0 = browser FPS, 1 = simulate infinite loop
 #else
